@@ -1,0 +1,1 @@
+"use client";import*as React from"react";import{ActionMessageResourcePage,configs}from"./message-resources";export default function Page(){return <ActionMessageResourcePage config={configs.mailTemplate} kind="mail"/>}

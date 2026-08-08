@@ -6,6 +6,7 @@ export default defineFrontModule({
   contractVersion: "1.0.0",
   pages: [
     { key: "system/user/index", path: "/system/user", entry: "user-list", rendering: "client" },
+    { key: "system/config/index", path: "/system/config", entry: "config-list", rendering: "client" },
     { key: "system/role/index", path: "/system/role", entry: "role-list", rendering: "client" },
     { key: "system/menu/index", path: "/system/menu", entry: "menu-list", rendering: "client" },
     { key: "system/dept/index", path: "/system/dept", entry: "dept-list", rendering: "client" },

@@ -7,7 +7,7 @@ import {
   PageHeader, Select, StatusBadge, type DataColumn,
 } from "@neton/application-front-kit";
 
-interface ConfigItem {
+interface SettingItem {
   category: string;
   key: string;
   value: string;
@@ -18,32 +18,32 @@ interface ConfigItem {
   isDefault: boolean;
 }
 
-// 与后端 ConfigValueType 的序号对齐
+// 与后端 SettingValueType 的序号对齐
 const VALUE_TYPE: Record<number, string> = {
   0: "文本", 1: "整数", 2: "长整数", 3: "布尔", 4: "定点数", 5: "JSON",
 };
 
 /**
- * 参数配置（SYSTEM_CONFIG_SPEC）。
+ * 系统设置（SYSTEM_CONFIG_SPEC）。
  *
- * 列表以**代码里的定义**为准，不是库里的行——所以没有新增和删除：配置项由代码声明，
+ * 列表以**代码里的定义**为准，不是库里的行——所以没有新增和删除：设置项由代码声明，
  * 后台只能改值。库里若混进一个没有定义的 key，等于没人知道它做什么，
  * 这里也就不该提供制造它的入口。
  */
-export default function SystemConfigListPage() {
-  const [rows, setRows] = React.useState<ConfigItem[]>([]);
+export default function SystemSettingListPage() {
+  const [rows, setRows] = React.useState<SettingItem[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [categoryQuery, setCategoryQuery] = React.useState("");
   const [category, setCategory] = React.useState("");
-  const [editing, setEditing] = React.useState<ConfigItem | null>(null);
+  const [editing, setEditing] = React.useState<SettingItem | null>(null);
   const [draft, setDraft] = React.useState("");
   const [pending, setPending] = React.useState(false);
 
   const load = React.useCallback(() => {
     setLoading(true);
     const qs = category ? `?category=${encodeURIComponent(category)}` : "";
-    apiFetch<ConfigItem[]>(`/admin/system/config/list${qs}`)
+    apiFetch<SettingItem[]>(`/admin/system/setting/list${qs}`)
       .then((d) => { setRows(d); setError(null); })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
@@ -56,7 +56,7 @@ export default function SystemConfigListPage() {
     try {
       // 后端按定义校验，越界/类型不符会被拒——错误停在这里，
       // 好过写进库之后读取时静默退回默认值
-      await apiWrite("/admin/system/config/update", "POST", { key: editing.key, value: draft.trim() });
+      await apiWrite("/admin/system/setting/update", "POST", { key: editing.key, value: draft.trim() });
       setEditing(null);
       load();
     } catch (e) {
@@ -69,7 +69,7 @@ export default function SystemConfigListPage() {
   async function sync() {
     setPending(true);
     try {
-      const created = await apiWrite<number>("/admin/system/config/sync", "POST");
+      const created = await apiWrite<number>("/admin/system/setting/sync", "POST");
       setError(created > 0 ? null : null);
       load();
     } catch (e) {
@@ -84,9 +84,9 @@ export default function SystemConfigListPage() {
     [rows],
   );
 
-  const columns: DataColumn<ConfigItem>[] = [
+  const columns: DataColumn<SettingItem>[] = [
     { key: "category", header: "模块", cell: (r) => r.category },
-    { key: "name", header: "配置项", cell: (r) => (
+    { key: "name", header: "设置项", cell: (r) => (
         <div>
           <div>{r.name}</div>
           <code className="text-[11px] text-[var(--muted-foreground)]">{r.key}</code>
@@ -113,8 +113,8 @@ export default function SystemConfigListPage() {
     <div className="flex flex-col gap-4">
       <PageHeader
         eyebrow="系统管理"
-        title="参数配置"
-        description="配置项由代码声明，后台只改值；改错会被按定义拒绝"
+        title="系统设置"
+        description="设置项由代码声明，后台只改值；改错会被按定义拒绝"
         actions={<Button variant="outline" onClick={sync} disabled={pending}>同步缺失项</Button>}
       />
       {error && <Alert tone="error">{error}</Alert>}
@@ -147,7 +147,7 @@ export default function SystemConfigListPage() {
           </>
         }
       >
-        <Field label="配置 key">
+        <Field label="设置 key">
           <code className="text-xs">{editing?.key}</code>
         </Field>
         <Field label={`值（${editing ? VALUE_TYPE[editing.valueType] ?? "" : ""}）`}>

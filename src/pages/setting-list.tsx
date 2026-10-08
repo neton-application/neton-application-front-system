@@ -141,7 +141,7 @@ export default function SystemSettingListPage() {
         footer={
           <>
             <Button variant="outline" onClick={() => setEditing(null)}>取消</Button>
-            <Button onClick={save} disabled={pending || draft.trim().length === 0}>
+            <Button onClick={save} disabled={pending}>
               {pending ? "保存中…" : "保存"}
             </Button>
           </>

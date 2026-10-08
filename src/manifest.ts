@@ -24,6 +24,9 @@ export default defineFrontModule({
     { key: "system/notify/template/index", path: "/system/notify/template", entry: "notify-template", rendering: "client" },
     { key: "system/notify/message/index", path: "/system/notify/message", entry: "notify-message", rendering: "client" },
     { key: "system/notify/my/index", path: "/system/notify/my", entry: "notify-my", rendering: "client" },
+    // 个人中心：不进菜单表（每个后台账号都能管自己），从右上角个人菜单进入，标题在这里给
+    { key: "system/profile/index", path: "/system/profile", entry: "profile", rendering: "client", title: "个人资料" },
+    { key: "system/password/index", path: "/system/password", entry: "password", rendering: "client", title: "修改密码" },
     { key: "system/social/user/index", path: "/system/social/user", entry: "social-user", rendering: "client" },
   ],
 });

@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "sideEffects": false,
+  "dependencies": {
+    "qrcode.react": "^4.2.0"
+  },
   "exports": {
     "./manifest": "./src/manifest.ts",
     "./pages/*": "./src/pages/*.tsx"
@@ -17,6 +20,7 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "@neton/application-front-contract": "file:../neton-application-front/packages/front-contract",
     "@neton/application-front-kit": "file:../neton-application-front/packages/front-kit",
     "@neton/application-front-resource": "file:../neton-application-front/packages/front-resource",

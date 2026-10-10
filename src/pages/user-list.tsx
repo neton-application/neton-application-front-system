@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import UserMfa from "./user-mfa";
 import { apiFetch, apiWrite } from "@neton/application-front-runtime/client";
 import { useMutation, usePermission, useQuery, useQueryClient } from "@neton/application-front-runtime/client-context";
 import type { PageResponse } from "@neton/application-front-runtime/types";
@@ -39,6 +40,7 @@ export default function SystemUserListPage() {
   const [selectedRoleIds, setSelectedRoleIds] = React.useState<number[]>([]);
   const [passwordFor, setPasswordFor] = React.useState<User | null>(null);
   const [password, setPassword] = React.useState("");
+  const [mfaUser, setMfaUser] = React.useState<User | null>(null);
   const [pending, setPending] = React.useState<Pending | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -109,6 +111,7 @@ export default function SystemUserListPage() {
         ...(canAssignRole ? [{ label: "分配角色", onClick: () => openRoles(user) }] : []),
       ]}
       more={[
+        { label: "MFA 设置", onClick: () => setMfaUser(user) },
         ...(canResetPassword ? [{ label: "重置密码", onClick: () => { setError(null); setPassword(""); setPasswordFor(user); } }] : []),
         ...(canUpdate ? [{ label: user.status === 1 ? "停用账号" : "启用账号", onClick: () => setPending({ type: "status", user }) }] : []),
         ...(canDelete && user.username !== "admin" ? [{ label: "删除账号", danger: true, onClick: () => setPending({ type: "delete", user }) }] : []),
@@ -117,6 +120,7 @@ export default function SystemUserListPage() {
   ];
 
   return <div className="space-y-4">
+    {mfaUser && <UserMfa id={mfaUser.id} name={mfaUser.username} onClose={() => setMfaUser(null)} />}
     <PageHeader eyebrow="SYSTEM DIRECTORY" title="管理员管理" description="维护后台账号资料、组织归属、角色、密码和启停状态。" actions={<>{canCreate && <Button onClick={() => { setError(null); setForm({ ...emptyForm }); }}>新增管理员</Button>}<Button variant="outline" onClick={() => users.refetch()}>刷新</Button></>} />
     <FilterPanel onSubmit={(event) => { event.preventDefault(); setPage(1); setFilters({ username: draft.username.trim(), mobile: draft.mobile.trim(), status: draft.status }); }}><div className="admin-filter-grid"><Field label="用户名"><Input value={draft.username} onChange={(event) => setDraft({ ...draft, username: event.target.value })} placeholder="输入用户名" /></Field><Field label="手机号"><Input value={draft.mobile} onChange={(event) => setDraft({ ...draft, mobile: event.target.value })} placeholder="输入手机号" /></Field><Field label="状态"><Select value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value })}><option value="">全部状态</option><option value="1">启用</option><option value="0">停用</option></Select></Field><div className="flex items-end gap-2"><Button type="button" variant="ghost" onClick={() => { const value = { username: "", mobile: "", status: "" }; setDraft(value); setFilters(value); setPage(1); }}>重置</Button><Button type="submit">查询</Button></div></div></FilterPanel>
     {error && !form && !rolesFor && !passwordFor && <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>}

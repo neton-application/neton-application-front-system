@@ -1,13 +1,16 @@
 "use client";
 import { ResourcePage } from "@neton/application-front-resource";
-export default function Page() { return <ResourcePage config={{
-  resourceKey: "system-login-log", eyebrow: "AUDIT", title: "登录日志", description: "审计后台登录结果、来源地址与客户端信息。", endpoint: "/system/login-log", readOnly: true,
-  detailFields: [{ key: "id", label: "编号", format: "mono" }, { key: "userId", label: "用户 ID", format: "mono" }, { key: "username", label: "用户名" }, { key: "userIp", label: "IP 地址", format: "mono" }, { key: "userAgent", label: "客户端" }, { key: "loginResult", label: "登录结果" }, { key: "createdAt", label: "登录时间", format: "date" }],
+import { useT } from "@neton/application-front-runtime/i18n";
+export default function Page() {
+  const t = useT("system");
+  return <ResourcePage config={{
+  resourceKey: "system-login-log", eyebrow: t("common.eyebrow.audit"), title: t("loginLog.title"), description: t("loginLog.description"), endpoint: "/system/login-log", readOnly: true,
+  detailFields: [{ key: "id", label: t("common.id"), format: "mono" }, { key: "userId", label: t("common.userId"), format: "mono" }, { key: "username", label: t("common.username") }, { key: "userIp", label: t("common.ipAddress"), format: "mono" }, { key: "userAgent", label: t("loginLog.field.userAgent") }, { key: "loginResult", label: t("loginLog.field.loginResult") }, { key: "createdAt", label: t("loginLog.field.loginTime"), format: "date" }],
   permissions: { page: "system:login-log:query" },
   fields: [
-    { key: "id", label: "编号", format: "mono" }, { key: "username", label: "用户名" }, { key: "userIp", label: "IP 地址", format: "mono" },
-    { key: "loginResult", label: "结果" }, { key: "userAgent", label: "客户端" }, { key: "createdAt", label: "时间", format: "date" },
-    { key: "username", label: "用户名", filter: true, table: false }, { key: "userIp", label: "IP 地址", filter: true, table: false },
-    { key: "loginResult", label: "登录结果", filter: true, table: false, type: "select", options: [{ label: "成功", value: 0 }, { label: "失败", value: 1 }] },
+    { key: "id", label: t("common.id"), format: "mono" }, { key: "username", label: t("common.username") }, { key: "userIp", label: t("common.ipAddress"), format: "mono" },
+    { key: "loginResult", label: t("loginLog.field.result") }, { key: "userAgent", label: t("loginLog.field.userAgent") }, { key: "createdAt", label: t("common.time"), format: "date" },
+    { key: "username", label: t("common.username"), filter: true, table: false }, { key: "userIp", label: t("common.ipAddress"), filter: true, table: false },
+    { key: "loginResult", label: t("loginLog.field.loginResult"), filter: true, table: false, type: "select", options: [{ label: t("loginLog.result.success"), value: 0 }, { label: t("loginLog.result.failure"), value: 1 }] },
   ],
 }} />; }

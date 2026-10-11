@@ -6,6 +6,8 @@ import {
   Alert, Button, DataTable, Drawer, Field, FilterPanel, Input,
   PageHeader, Select, StatusBadge, type DataColumn,
 } from "@neton/application-front-kit";
+import { useT, type Translate } from "@neton/application-front-runtime/i18n";
+import { useDescribeError } from "@neton/application-front-runtime/errors";
 
 interface SettingItem {
   category: string;
@@ -19,9 +21,13 @@ interface SettingItem {
 }
 
 // 与后端 SettingValueType 的序号对齐
-const VALUE_TYPE: Record<number, string> = {
-  0: "文本", 1: "整数", 2: "长整数", 3: "布尔", 4: "定点数", 5: "JSON",
+const VALUE_TYPE_KEYS: Record<number, string> = {
+  0: "setting.valueType.text", 1: "setting.valueType.int", 2: "setting.valueType.long", 3: "setting.valueType.boolean", 4: "setting.valueType.decimal", 5: "setting.valueType.json",
 };
+function valueTypeLabel(t: Translate, valueType: number): string | undefined {
+  const key = VALUE_TYPE_KEYS[valueType];
+  return key ? t(key) : undefined;
+}
 
 /**
  * 系统设置（SYSTEM_CONFIG_SPEC）。
@@ -31,6 +37,8 @@ const VALUE_TYPE: Record<number, string> = {
  * 这里也就不该提供制造它的入口。
  */
 export default function SystemSettingListPage() {
+  const t = useT("system");
+  const describeError = useDescribeError();
   const [rows, setRows] = React.useState<SettingItem[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -45,9 +53,9 @@ export default function SystemSettingListPage() {
     const qs = category ? `?category=${encodeURIComponent(category)}` : "";
     apiFetch<SettingItem[]>(`/admin/system/setting/list${qs}`)
       .then((d) => { setRows(d); setError(null); })
-      .catch((e: Error) => setError(e.message))
+      .catch((e: Error) => setError(describeError(e)))
       .finally(() => setLoading(false));
-  }, [category]);
+  }, [category, describeError]);
   React.useEffect(load, [load]);
 
   async function save() {
@@ -60,7 +68,7 @@ export default function SystemSettingListPage() {
       setEditing(null);
       load();
     } catch (e) {
-      setError((e as Error).message);
+      setError(describeError(e));
     } finally {
       setPending(false);
     }
@@ -73,7 +81,7 @@ export default function SystemSettingListPage() {
       setError(created > 0 ? null : null);
       load();
     } catch (e) {
-      setError((e as Error).message);
+      setError(describeError(e));
     } finally {
       setPending(false);
     }
@@ -85,48 +93,48 @@ export default function SystemSettingListPage() {
   );
 
   const columns: DataColumn<SettingItem>[] = [
-    { key: "category", header: "模块", cell: (r) => r.category },
-    { key: "name", header: "设置项", cell: (r) => (
+    { key: "category", header: t("common.module"), cell: (r) => r.category },
+    { key: "name", header: t("setting.field.item"), cell: (r) => (
         <div>
           <div>{r.name}</div>
           <code className="text-[11px] text-[var(--muted-foreground)]">{r.key}</code>
         </div>
       ) },
-    { key: "value", header: "当前值", cell: (r) => (
+    { key: "value", header: t("setting.field.value"), cell: (r) => (
         <div className="flex items-center gap-2">
           <code className="text-xs">{r.value}</code>
           {/* 区分「没改过」和「改过」，运营排查时第一眼要看的就是这个 */}
-          {!r.isDefault && <StatusBadge active>已修改</StatusBadge>}
+          {!r.isDefault && <StatusBadge active>{t("setting.modified")}</StatusBadge>}
         </div>
       ) },
-    { key: "valueType", header: "类型", cell: (r) => VALUE_TYPE[r.valueType] ?? r.valueType },
-    { key: "defaultValue", header: "默认值", cell: (r) => <code className="text-xs">{r.defaultValue}</code> },
-    { key: "description", header: "说明", cell: (r) => (
+    { key: "valueType", header: t("common.type"), cell: (r) => valueTypeLabel(t, r.valueType) ?? r.valueType },
+    { key: "defaultValue", header: t("setting.field.defaultValue"), cell: (r) => <code className="text-xs">{r.defaultValue}</code> },
+    { key: "description", header: t("common.remark"), cell: (r) => (
         <span className="text-xs text-[var(--muted-foreground)]">{r.description}</span>
       ) },
     { key: "ops", header: "", className: "text-right", cell: (r) => (
-        <Button variant="outline" onClick={() => { setEditing(r); setDraft(r.value); }}>修改</Button>
+        <Button variant="outline" onClick={() => { setEditing(r); setDraft(r.value); }}>{t("setting.action.edit")}</Button>
       ) },
   ];
 
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
-        eyebrow="系统管理"
-        title="系统设置"
-        description="设置项由代码声明，后台只改值；改错会被按定义拒绝"
-        actions={<Button variant="outline" onClick={sync} disabled={pending}>同步缺失项</Button>}
+        eyebrow={t("setting.eyebrow")}
+        title={t("setting.title")}
+        description={t("setting.description")}
+        actions={<Button variant="outline" onClick={sync} disabled={pending}>{t("setting.action.sync")}</Button>}
       />
       {error && <Alert tone="error">{error}</Alert>}
 
       <FilterPanel onSubmit={(e) => { e.preventDefault(); setCategory(categoryQuery); }}>
-        <Field label="所属模块">
+        <Field label={t("setting.field.category")}>
           <Select value={categoryQuery} onChange={(e) => setCategoryQuery(e.target.value)}>
-            <option value="">全部</option>
+            <option value="">{t("common.all")}</option>
             {categories.map((c) => <option key={c} value={c}>{c}</option>)}
           </Select>
         </Field>
-        <Button type="submit">查询</Button>
+        <Button type="submit">{t("common.search")}</Button>
       </FilterPanel>
 
       <div className="front-surface overflow-hidden rounded-xl">
@@ -140,24 +148,24 @@ export default function SystemSettingListPage() {
         description={editing?.description}
         footer={
           <>
-            <Button variant="outline" onClick={() => setEditing(null)}>取消</Button>
+            <Button variant="outline" onClick={() => setEditing(null)}>{t("common.cancel")}</Button>
             <Button onClick={save} disabled={pending}>
-              {pending ? "保存中…" : "保存"}
+              {pending ? t("common.saving") : t("common.save")}
             </Button>
           </>
         }
       >
-        <Field label="设置 key">
+        <Field label={t("setting.field.key")}>
           <code className="text-xs">{editing?.key}</code>
         </Field>
-        <Field label={`值（${editing ? VALUE_TYPE[editing.valueType] ?? "" : ""}）`}>
+        <Field label={t("setting.field.valueWithType", { type: editing ? valueTypeLabel(t, editing.valueType) ?? "" : "" })}>
           <Input value={draft} onChange={(e) => setDraft(e.target.value)} />
         </Field>
-        <Field label="默认值">
+        <Field label={t("setting.field.defaultValue")}>
           <div className="flex items-center gap-2">
             <code className="text-xs">{editing?.defaultValue}</code>
             {editing && draft !== editing.defaultValue && (
-              <Button variant="outline" onClick={() => setDraft(editing.defaultValue)}>恢复默认</Button>
+              <Button variant="outline" onClick={() => setDraft(editing.defaultValue)}>{t("setting.action.restoreDefault")}</Button>
             )}
           </div>
         </Field>

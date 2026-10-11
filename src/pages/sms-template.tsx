@@ -1,1 +1,1 @@
-"use client";import*as React from"react";import{ActionMessageResourcePage,configs}from"./message-resources";export default function Page(){return <ActionMessageResourcePage config={configs.smsTemplate} kind="sms"/>}
+"use client";import*as React from"react";import{ActionMessageResourcePage}from"./message-resources";export default function Page(){return <ActionMessageResourcePage config="smsTemplate" kind="sms"/>}

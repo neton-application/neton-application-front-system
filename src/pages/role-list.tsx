@@ -20,6 +20,8 @@ import {
   Textarea,
   type DataColumn,
 } from "@neton/application-front-kit";
+import { useT } from "@neton/application-front-runtime/i18n";
+import { useDescribeError } from "@neton/application-front-runtime/errors";
 
 interface Role {
   id: number;
@@ -73,6 +75,7 @@ function MenuPermissionNode({
   onToggle: (node: MenuTreeNode, checked: boolean) => void;
   selected: Set<number>;
 }) {
+  const t = useT("system");
   const [expanded, setExpanded] = React.useState(true);
   const subtreeIds = React.useMemo(() => collectMenuIds(node), [node]);
   const selectedCount = subtreeIds.filter((id) => selected.has(id)).length;
@@ -83,7 +86,7 @@ function MenuPermissionNode({
     if (checkboxRef.current) checkboxRef.current.indeterminate = indeterminate;
   }, [indeterminate]);
 
-  const typeLabel = node.type === 1 ? "目录" : node.type === 2 ? "页面" : "操作";
+  const typeLabel = node.type === 1 ? t("menu.type.directory") : node.type === 2 ? t("menu.type.page") : t("role.menuType.action");
   return (
     <div>
       <div
@@ -92,7 +95,7 @@ function MenuPermissionNode({
       >
         <button
           type="button"
-          aria-label={expanded ? `收起${node.name}` : `展开${node.name}`}
+          aria-label={expanded ? t("common.collapseItem", { name: node.name }) : t("common.expandItem", { name: node.name })}
           className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[var(--muted-foreground)] hover:bg-[var(--card)] ${node.children.length === 0 ? "invisible" : ""}`}
           onClick={() => setExpanded((value) => !value)}
         >
@@ -124,6 +127,8 @@ function MenuPermissionNode({
 }
 
 export default function SystemRoleListPage() {
+  const t = useT("system");
+  const describeError = useDescribeError();
   const queryClient = useQueryClient();
   const canCreate = usePermission("system:role:create");
   const canUpdate = usePermission("system:role:update");
@@ -165,7 +170,7 @@ export default function SystemRoleListPage() {
       setForm(null);
       await queryClient.invalidateQueries({ queryKey: ["system", "roles"] });
     },
-    onError: (error: Error) => setFormError(error.message),
+    onError: (error: Error) => setFormError(describeError(error)),
   });
 
   const deleteMutation = useMutation({
@@ -179,7 +184,7 @@ export default function SystemRoleListPage() {
   const assignMenuMutation = useMutation({
     mutationFn: () => apiWrite<void>("/admin/system/permission/assign-role-menu", "POST", { roleId: permissionRole!.id, menuIds: selectedMenuIds }),
     onSuccess: () => setPermissionRole(null),
-    onError: (error: Error) => setFormError(error.message),
+    onError: (error: Error) => setFormError(describeError(error)),
   });
 
   const menuTree = React.useMemo(() => buildMenuTree(menus.data ?? []), [menus.data]);
@@ -223,27 +228,27 @@ export default function SystemRoleListPage() {
     try {
       setSelectedMenuIds(await apiFetch<number[]>(`/admin/system/permission/list-role-menus?roleId=${role.id}`));
     } catch (error) {
-      setFormError((error as Error).message);
+      setFormError(describeError(error));
     }
   }
 
   const columns: DataColumn<Role>[] = [
-    { key: "id", header: "角色编号", cell: (role) => <span className="font-mono text-xs">{role.id}</span> },
-    { key: "name", header: "角色名称", cell: (role) => <span className="font-semibold text-[var(--foreground)]">{role.name}</span> },
-    { key: "code", header: "角色标识", cell: (role) => <code className="rounded bg-[var(--muted)] px-2 py-1 text-xs text-[var(--primary)]">{role.code}</code> },
-    { key: "description", header: "说明", cell: (role) => role.description || <span className="text-[var(--muted-foreground)]">未填写</span> },
-    { key: "status", header: "状态", cell: (role) => <StatusBadge active={role.status === 1}>{role.status === 1 ? "启用" : "停用"}</StatusBadge> },
+    { key: "id", header: t("role.field.id"), cell: (role) => <span className="font-mono text-xs">{role.id}</span> },
+    { key: "name", header: t("role.field.name"), cell: (role) => <span className="font-semibold text-[var(--foreground)]">{role.name}</span> },
+    { key: "code", header: t("role.field.code"), cell: (role) => <code className="rounded bg-[var(--muted)] px-2 py-1 text-xs text-[var(--primary)]">{role.code}</code> },
+    { key: "description", header: t("common.remark"), cell: (role) => role.description || <span className="text-[var(--muted-foreground)]">{t("role.notFilled")}</span> },
+    { key: "status", header: t("common.status"), cell: (role) => <StatusBadge active={role.status === 1}>{role.status === 1 ? t("common.enabled") : t("common.disabled")}</StatusBadge> },
     {
       key: "actions",
-      header: "操作",
+      header: t("common.actions"),
       headerClassName: "text-right",
       className: "text-right",
       cell: (role) => <RowActions
         primary={[
-          ...(canUpdate ? [{ label: "编辑", onClick: () => { setFormError(null); setForm({ id: role.id, code: role.code, name: role.name, description: role.description ?? "", sort: 0, status: role.status }); } }] : []),
-          ...(canAssignPermission ? [{ label: role.code === "super_admin" ? "查看权限" : "菜单权限", onClick: () => openMenuPermission(role) }] : []),
+          ...(canUpdate ? [{ label: t("common.edit"), kind: "edit" as const, onClick: () => { setFormError(null); setForm({ id: role.id, code: role.code, name: role.name, description: role.description ?? "", sort: 0, status: role.status }); } }] : []),
+          ...(canAssignPermission ? [{ label: role.code === "super_admin" ? t("role.action.viewPermissions") : t("role.action.menuPermissions"), kind: role.code === "super_admin" ? "view" as const : "assign" as const, onClick: () => openMenuPermission(role) }] : []),
         ]}
-        more={canDelete && role.code !== "super_admin" ? [{ label: "删除角色", danger: true, onClick: () => setDeleting(role) }] : []}
+        more={canDelete && role.code !== "super_admin" ? [{ label: t("role.action.delete"), kind: "delete" as const, danger: true, onClick: () => setDeleting(role) }] : []}
       />,
     },
   ];
@@ -258,7 +263,7 @@ export default function SystemRoleListPage() {
     event.preventDefault();
     if (!form) return;
     if (form.name.trim().length < 2 || form.code.trim().length < 2) {
-      setFormError("角色名称和标识至少需要 2 个字符");
+      setFormError(t("role.error.invalidForm"));
       return;
     }
     setFormError(null);
@@ -268,41 +273,41 @@ export default function SystemRoleListPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        eyebrow="ACCESS CONTROL"
-        title="角色管理"
-        description="维护后台角色与稳定的权限标识。超级管理员角色受到保护。"
-        actions={<>{canCreate && <Button onClick={() => { setFormError(null); setForm({ ...emptyRole }); }}>新增角色</Button>}<Button variant="outline" onClick={() => query.refetch()} disabled={query.isFetching}>刷新</Button></>}
+        eyebrow={t("role.eyebrow")}
+        title={t("role.title")}
+        description={t("role.description")}
+        actions={<>{canCreate && <Button onClick={() => { setFormError(null); setForm({ ...emptyRole }); }}>{t("role.action.create")}</Button>}<Button variant="outline" onClick={() => query.refetch()} disabled={query.isFetching}>{t("common.refresh")}</Button></>}
       />
 
       <FilterPanel onSubmit={submitFilters}>
         <div className="grid gap-3 md:grid-cols-[1fr_1fr_180px_auto] md:items-end">
-          <Field label="角色名称"><Input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="输入角色名称" /></Field>
-          <Field label="角色标识"><Input value={draft.code} onChange={(event) => setDraft({ ...draft, code: event.target.value })} placeholder="例如 operator" /></Field>
-          <Field label="状态"><Select value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value })}><option value="">全部状态</option><option value="1">启用</option><option value="0">停用</option></Select></Field>
-          <div className="flex gap-2"><Button type="button" variant="ghost" onClick={() => { const next = { name: "", code: "", status: "" }; setDraft(next); setFilters(next); setPage(1); }}>重置</Button><Button type="submit">查询</Button></div>
+          <Field label={t("role.field.name")}><Input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder={t("role.placeholder.nameSearch")} /></Field>
+          <Field label={t("role.field.code")}><Input value={draft.code} onChange={(event) => setDraft({ ...draft, code: event.target.value })} placeholder={t("role.placeholder.code")} /></Field>
+          <Field label={t("common.status")}><Select value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value })}><option value="">{t("common.allStatus")}</option><option value="1">{t("common.enabled")}</option><option value="0">{t("common.disabled")}</option></Select></Field>
+          <div className="flex gap-2"><Button type="button" variant="ghost" onClick={() => { const next = { name: "", code: "", status: "" }; setDraft(next); setFilters(next); setPage(1); }}>{t("common.reset")}</Button><Button type="submit">{t("common.search")}</Button></div>
         </div>
       </FilterPanel>
 
       <section className="front-surface overflow-hidden rounded-xl">
-        <DataTable columns={columns} rows={query.data?.list ?? []} rowKey={(role) => role.id} loading={query.isPending} error={query.error?.message} />
+        <DataTable columns={columns} rows={query.data?.list ?? []} rowKey={(role) => role.id} loading={query.isPending} error={query.error ? describeError(query.error) : null} />
         <Pagination page={page} pageSize={pageSize} total={query.data?.total ?? 0} loading={query.isFetching} onPageChange={setPage} onPageSizeChange={(value) => { setPageSize(value); setPage(1); }} />
       </section>
 
       <Drawer
         open={Boolean(form)}
         onClose={() => setForm(null)}
-        title={form?.id ? "编辑角色" : "新增角色"}
-        description="角色标识将用于服务端权限判断，保存后请谨慎修改。"
-        footer={<><Button variant="ghost" onClick={() => setForm(null)}>取消</Button><Button type="submit" form="role-form" disabled={saveMutation.isPending}>{saveMutation.isPending ? "保存中…" : "保存角色"}</Button></>}
+        title={form?.id ? t("role.form.editTitle") : t("role.action.create")}
+        description={t("role.form.description")}
+        footer={<><Button variant="ghost" onClick={() => setForm(null)}>{t("common.cancel")}</Button><Button type="submit" form="role-form" disabled={saveMutation.isPending}>{saveMutation.isPending ? t("common.saving") : t("role.action.save")}</Button></>}
       >
         {form && (
           <form id="role-form" onSubmit={submitRole} className="space-y-4">
             {formError && <div className="rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700">{formError}</div>}
-            <Field label="角色名称"><Input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="例如 运营人员" /></Field>
-            <Field label="角色标识"><Input value={form.code} onChange={(event) => setForm({ ...form, code: event.target.value })} placeholder="例如 operator" disabled={form.code === "super_admin"} /></Field>
-            <Field label="显示顺序"><Input type="number" min={0} max={9999} value={form.sort} onChange={(event) => setForm({ ...form, sort: Number(event.target.value) })} /></Field>
-            <Field label="状态"><Select value={form.status} onChange={(event) => setForm({ ...form, status: Number(event.target.value) })}><option value="1">启用</option><option value="0">停用</option></Select></Field>
-            <Field label="说明"><Textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="描述该角色的职责范围" /></Field>
+            <Field label={t("role.field.name")}><Input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder={t("role.placeholder.name")} /></Field>
+            <Field label={t("role.field.code")}><Input value={form.code} onChange={(event) => setForm({ ...form, code: event.target.value })} placeholder={t("role.placeholder.code")} disabled={form.code === "super_admin"} /></Field>
+            <Field label={t("common.displayOrder")}><Input type="number" min={0} max={9999} value={form.sort} onChange={(event) => setForm({ ...form, sort: Number(event.target.value) })} /></Field>
+            <Field label={t("common.status")}><Select value={form.status} onChange={(event) => setForm({ ...form, status: Number(event.target.value) })}><option value="1">{t("common.enabled")}</option><option value="0">{t("common.disabled")}</option></Select></Field>
+            <Field label={t("common.remark")}><Textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder={t("role.placeholder.description")} /></Field>
           </form>
         )}
       </Drawer>
@@ -310,24 +315,24 @@ export default function SystemRoleListPage() {
       <Drawer
         open={Boolean(permissionRole)}
         onClose={() => setPermissionRole(null)}
-        title="分配菜单权限"
-        description={protectedRole ? `${permissionRole?.name ?? ""}是系统内置全权限角色，权限不可修改` : `${permissionRole?.name ?? ""}（${permissionRole?.code ?? ""}）`}
+        title={t("role.permission.title")}
+        description={protectedRole ? t("role.permission.protectedSubject", { name: permissionRole?.name ?? "" }) : t("role.permission.subject", { name: permissionRole?.name ?? "", code: permissionRole?.code ?? "" })}
         widthClassName="max-w-2xl"
         footer={protectedRole
-          ? <div className="flex w-full items-center justify-between gap-3"><span className="text-xs text-[var(--muted-foreground)]">系统默认拥有全部 <strong className="text-[var(--foreground)]">{menus.data?.length ?? 0}</strong> 项权限</span><Button onClick={() => setPermissionRole(null)}>关闭</Button></div>
-          : <div className="flex w-full items-center justify-between gap-3"><span className="text-xs text-[var(--muted-foreground)]">已选择 <strong className="text-[var(--foreground)]">{selectedMenuIds.length}</strong> 项</span><div className="flex gap-2"><Button variant="ghost" onClick={() => setPermissionRole(null)}>取消</Button><Button variant="outline" onClick={() => setSelectedMenuIds(selectedMenuIds.length === (menus.data?.length ?? 0) ? [] : (menus.data ?? []).map((menu) => menu.id))}>{selectedMenuIds.length === (menus.data?.length ?? 0) ? "清空选择" : "全部选择"}</Button><Button onClick={() => assignMenuMutation.mutate()} disabled={assignMenuMutation.isPending}>{assignMenuMutation.isPending ? "保存中…" : "保存权限"}</Button></div></div>}
+          ? <div className="flex w-full items-center justify-between gap-3"><span className="text-xs text-[var(--muted-foreground)]">{t("role.permission.allGranted", { count: menus.data?.length ?? 0 })}</span><Button onClick={() => setPermissionRole(null)}>{t("common.close")}</Button></div>
+          : <div className="flex w-full items-center justify-between gap-3"><span className="text-xs text-[var(--muted-foreground)]">{t("role.permission.selected", { count: selectedMenuIds.length })}</span><div className="flex gap-2"><Button variant="ghost" onClick={() => setPermissionRole(null)}>{t("common.cancel")}</Button><Button variant="outline" onClick={() => setSelectedMenuIds(selectedMenuIds.length === (menus.data?.length ?? 0) ? [] : (menus.data ?? []).map((menu) => menu.id))}>{selectedMenuIds.length === (menus.data?.length ?? 0) ? t("role.permission.clearAll") : t("role.permission.selectAll")}</Button><Button onClick={() => assignMenuMutation.mutate()} disabled={assignMenuMutation.isPending}>{assignMenuMutation.isPending ? t("common.saving") : t("role.permission.save")}</Button></div></div>}
       >
         <div className="space-y-3">
-          {protectedRole && <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs leading-5 text-blue-800 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200"><span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">i</span><span>超级管理员权限由系统保证，不依赖角色菜单关联记录。此处仅展示当前全部可用权限，不能取消或重新分配。</span></div>}
+          {protectedRole && <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs leading-5 text-blue-800 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200"><span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">i</span><span>{t("role.permission.protectedNotice")}</span></div>}
           {formError && <div className="rounded-xl bg-red-50 p-3 text-xs text-red-700">{formError}</div>}
-          {menus.isPending ? <div className="text-sm text-[var(--muted-foreground)]">加载菜单权限…</div> : menus.error ? <div className="rounded-xl bg-red-50 p-3 text-xs text-red-700">{menus.error.message}</div> : <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] py-2">
+          {menus.isPending ? <div className="text-sm text-[var(--muted-foreground)]">{t("role.permission.loading")}</div> : menus.error ? <div className="rounded-xl bg-red-50 p-3 text-xs text-red-700">{describeError(menus.error)}</div> : <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] py-2">
             {menuTree.map((node) => <MenuPermissionNode key={node.id} depth={0} disabled={protectedRole} node={node} onToggle={toggleMenuNode} selected={selectedMenuIdSet} />)}
-            {menuTree.length === 0 && <div className="p-6 text-center text-sm text-[var(--muted-foreground)]">暂无可分配菜单</div>}
+            {menuTree.length === 0 && <div className="p-6 text-center text-sm text-[var(--muted-foreground)]">{t("role.permission.empty")}</div>}
           </div>}
         </div>
       </Drawer>
 
-      <ConfirmDialog open={Boolean(deleting)} title="删除角色" description={`确定删除“${deleting?.name ?? ""}”吗？已分配该角色的账号可能立即失去权限。`} confirmLabel="确认删除" pending={deleteMutation.isPending} onCancel={() => setDeleting(null)} onConfirm={() => deleting && deleteMutation.mutate(deleting)} />
+      <ConfirmDialog open={Boolean(deleting)} title={t("role.action.delete")} description={t("role.confirm.deleteBody", { name: deleting?.name ?? "" })} confirmLabel={t("common.confirmDelete")} pending={deleteMutation.isPending} onCancel={() => setDeleting(null)} onConfirm={() => deleting && deleteMutation.mutate(deleting)} />
     </div>
   );
 }

@@ -1,12 +1,16 @@
 "use client";
 import { ResourcePage } from "@neton/application-front-resource";
-export default function Page() { return <ResourcePage config={{
-  resourceKey: "system-notice", eyebrow: "COMMUNICATION", title: "通知公告", description: "集中维护后台公告内容；v1 不伪造后端尚未提供的推送动作。", endpoint: "/system/notice",
+import { useT } from "@neton/application-front-runtime/i18n";
+export default function Page() {
+  const t = useT("system");
+  const status = [{ label: t("common.enabled"), value: 1 }, { label: t("common.disabled"), value: 0 }];
+  return <ResourcePage config={{
+  resourceKey: "system-notice", eyebrow: t("notice.eyebrow"), title: t("notice.title"), description: t("notice.description"), endpoint: "/system/notice",
   permissions: { page: "system:notice:query", create: "system:notice:create", update: "system:notice:update", delete: "system:notice:delete" },
   fields: [
-    { key: "title", label: "标题", required: true }, { key: "type", label: "类型", type: "select", defaultValue: 0, options: [{ label: "通知", value: 0 }, { label: "公告", value: 1 }] },
-    { key: "status", label: "状态", type: "select", defaultValue: 1, format: "status", options: [{ label: "启用", value: 1 }, { label: "停用", value: 0 }] },
-    { key: "content", label: "内容", type: "textarea", required: true, table: false }, { key: "createdAt", label: "创建时间", format: "date", table: true },
-    { key: "title", label: "标题", filter: true, table: false },
+    { key: "title", label: t("common.title"), required: true }, { key: "type", label: t("common.type"), type: "select", defaultValue: 0, options: [{ label: t("notice.type.notification"), value: 0 }, { label: t("notice.type.announcement"), value: 1 }] },
+    { key: "status", label: t("common.status"), type: "select", defaultValue: 1, format: "status", options: status },
+    { key: "content", label: t("common.content"), type: "textarea", required: true, table: false }, { key: "createdAt", label: t("common.createdAt"), format: "date", table: true },
+    { key: "title", label: t("common.title"), filter: true, table: false },
   ],
 }} />; }

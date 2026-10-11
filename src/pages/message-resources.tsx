@@ -3,26 +3,37 @@ import * as React from "react";
 import { ResourcePage, type ResourcePageConfig, type ResourceRecord } from "@neton/application-front-resource";
 import { apiWrite } from "@neton/application-front-runtime/client";
 import { useMutation, usePermission, useQueryClient } from "@neton/application-front-runtime/client-context";
+import { useT, type Translate } from "@neton/application-front-runtime/i18n";
+import { useDescribeError } from "@neton/application-front-runtime/errors";
 import { Alert, Button, Drawer, Field, Input, Textarea } from "@neton/application-front-kit";
-const status=[{label:"启用",value:1},{label:"停用",value:0}];
-const common=(endpoint:string,key:string,title:string,description:string,fields:ResourcePageConfig["fields"],readOnly=false,listPath="page"):ResourcePageConfig=>({resourceKey:key,eyebrow:"COMMUNICATION CENTER",title,description,endpoint,listPath,readOnly,permissions:{page:`system:${key}:query`,query:`system:${key}:query`,create:`system:${key}:create`,update:`system:${key}:update`,delete:`system:${key}:delete`},fields});
-export const configs={
- mailAccount:{...common("/system/mail-account","mail-account","邮箱账号","发信账号：SMTP（企业邮箱 / QQ / 163 等）或厂商 HTTP 接口（Resend / SendGrid / Mailgun / Brevo / 自定义 HTTP）。",[{key:"mail",label:"发件邮箱",required:true},{key:"fromName",label:"发件人名称"},{key:"vendor",label:"发信方式",type:"select",defaultValue:"smtp",options:[{label:"SMTP",value:"smtp"},{label:"Resend",value:"resend"},{label:"SendGrid",value:"sendgrid"},{label:"Mailgun",value:"mailgun"},{label:"Brevo",value:"brevo"},{label:"自定义 HTTP（POST JSON）",value:"http"}]},{key:"apiKey",label:"API Key（HTTP 厂商）",table:false},{key:"endpoint",label:"接口地址",table:false,placeholder:"Mailgun 填 https://api.mailgun.net/v3/<domain>；自定义 HTTP 填接收地址；其它留空"},{key:"username",label:"SMTP 用户名",table:false},{key:"password",label:"SMTP 密码",table:false},{key:"host",label:"SMTP 主机",table:false},{key:"port",label:"SMTP 端口",type:"number",defaultValue:465,table:false,placeholder:"465 用 SSL，587 用 STARTTLS"},{key:"sslEnable",label:"SSL（465）",type:"select",defaultValue:1,options:[{label:"开启",value:1},{label:"关闭",value:0}],table:false},{key:"starttlsEnable",label:"STARTTLS（587）",type:"select",defaultValue:0,options:[{label:"开启",value:1},{label:"关闭",value:0}],table:false},{key:"status",label:"状态",type:"select",defaultValue:1,format:"status",options:status},{key:"remark",label:"说明",type:"textarea",table:false},{key:"createTime",label:"创建时间",format:"date"},{key:"mail",label:"邮箱",filter:true,table:false},{key:"status",label:"状态",filter:true,table:false,type:"select",options:status}]),mapSave:(record:ResourceRecord)=>({...record,sslEnable:Boolean(Number(record.sslEnable)),starttlsEnable:Boolean(Number(record.starttlsEnable))})},
- mailTemplate:common("/system/mail-template","mail-template","邮件模板","维护邮件内容、参数定义和发送渠道。",templateFields()),
- mailLog:common("/system/mail-log","mail-log","邮件日志","查询邮件投递结果与失败原因。",logFields(),true),
- smsChannel:common("/system/sms-channel","sms-channel","短信渠道","维护短信供应商通道及结构化配置。",channelFields("sms")),
- smsTemplate:common("/system/sms-template","sms-template","短信模板","维护短信内容、参数定义和渠道绑定。",templateFields()),
- smsLog:common("/system/sms-log","sms-log","短信日志","查询短信发送结果与失败原因。",logFields(),true),
- notifyTemplate:common("/system/notify-template","notify-template","站内通知模板","将业务通知语义映射到消息模板。",[{key:"name",label:"模板名称",required:true},{key:"code",label:"模板编码",required:true,format:"mono"},{key:"type",label:"类型",type:"number",defaultValue:0},{key:"messageTemplateId",label:"消息模板 ID",type:"number",required:true},{key:"params",label:"参数定义",type:"textarea",table:false},{key:"status",label:"状态",type:"select",defaultValue:1,format:"status",options:status},{key:"remark",label:"说明",type:"textarea",table:false},{key:"createdAt",label:"创建时间",format:"date"},{key:"name",label:"名称",filter:true,table:false},{key:"code",label:"编码",filter:true,table:false}]),
- notifyMessage:common("/system/notify-message","notify-message","站内通知记录","查询全平台通知记录及用户读取状态。",notifyFields(),true),
- notifyMy:common("/system/notify-message","notify-message","我的通知","查看当前管理员收到的站内通知。",notifyFields(),true,"my-page"),
- socialUser:common("/system/social-user","social-user","社交身份","查看当前账号绑定的第三方平台身份。",[{key:"id",label:"记录 ID",format:"mono"},{key:"socialType",label:"平台"},{key:"openId",label:"Open ID",format:"mono"},{key:"nickname",label:"昵称"},{key:"createdAt",label:"绑定时间",format:"date"}],true,"list")
+type MessageConfigKey = "mailAccount" | "mailTemplate" | "mailLog" | "smsChannel" | "smsTemplate" | "smsLog" | "notifyTemplate" | "notifyMessage" | "notifyMy" | "socialUser";
+function buildConfigs(t:Translate):Record<MessageConfigKey,ResourcePageConfig>{
+const status=[{label:t("common.enabled"),value:1},{label:t("common.disabled"),value:0}];
+const onOff=[{label:t("message.option.on"),value:1},{label:t("message.option.off"),value:0}];
+const common=(endpoint:string,key:string,title:string,description:string,fields:ResourcePageConfig["fields"],readOnly=false,listPath="page"):ResourcePageConfig=>({resourceKey:key,eyebrow:t("message.eyebrow"),title,description,endpoint,listPath,readOnly,permissions:{page:`system:${key}:query`,query:`system:${key}:query`,create:`system:${key}:create`,update:`system:${key}:update`,delete:`system:${key}:delete`},fields});
+function templateFields(){return [{key:"name",label:t("message.field.templateName"),required:true},{key:"code",label:t("message.field.templateCode"),required:true,format:"mono" as const},{key:"content",label:t("common.content"),type:"textarea" as const,required:true},{key:"channelId",label:t("message.field.channelId"),type:"number" as const,required:true},{key:"type",label:t("common.type"),type:"number" as const,defaultValue:0},{key:"status",label:t("common.status"),type:"select" as const,defaultValue:1,format:"status" as const,options:status},{key:"params",label:t("message.field.params"),type:"textarea" as const,table:false},{key:"remark",label:t("common.remark"),type:"textarea" as const,table:false},{key:"createdAt",label:t("common.createdAt"),format:"date" as const},{key:"name",label:t("common.name"),filter:true,table:false},{key:"code",label:t("common.code"),filter:true,table:false}];}
+function channelFields(type:string){return [{key:"name",label:t("message.field.channelName"),required:true},{key:"code",label:t("message.field.channelCode"),required:true,format:"mono" as const},{key:"type",label:t("message.field.channelType"),defaultValue:type},{key:"config",label:t("message.field.channelConfig"),type:"textarea" as const,table:false},{key:"status",label:t("common.status"),type:"select" as const,defaultValue:1,format:"status" as const,options:status},{key:"remark",label:t("common.remark"),type:"textarea" as const,table:false},{key:"createdAt",label:t("common.createdAt"),format:"date" as const},{key:"name",label:t("common.name"),filter:true,table:false},{key:"status",label:t("common.status"),filter:true,table:false,type:"select" as const,options:status}];}
+function logFields(){return [{key:"id",label:t("message.field.recordId"),format:"mono" as const},{key:"receiver",label:t("message.field.receiver")},{key:"templateCode",label:t("message.field.templateCode"),format:"mono" as const},{key:"sendStatus",label:t("message.field.sendStatus")},{key:"errorMessage",label:t("message.field.errorMessage")},{key:"sendTime",label:t("message.field.sendTime"),format:"date" as const},{key:"receiver",label:t("message.field.receiver"),filter:true,table:false},{key:"sendStatus",label:t("message.field.sendStatus"),filter:true,table:false}];}
+function notifyFields(){return [{key:"id",label:t("message.field.notifyId"),format:"mono" as const},{key:"userId",label:t("message.field.userUid"),format:"mono" as const},{key:"templateCode",label:t("message.field.templateCode"),format:"mono" as const},{key:"templateContent",label:t("common.content")},{key:"readStatus",label:t("message.field.readStatus")},{key:"createdAt",label:t("common.createdAt"),format:"date" as const},{key:"userId",label:t("message.field.userUid"),filter:true,table:false},{key:"readStatus",label:t("message.field.readStatus"),filter:true,table:false}];}
+return {
+ mailAccount:{...common("/system/mail-account","mail-account",t("mailAccount.title"),t("mailAccount.description"),[{key:"mail",label:t("mailAccount.field.mail"),required:true},{key:"fromName",label:t("mailAccount.field.fromName")},{key:"vendor",label:t("mailAccount.field.vendor"),type:"select",defaultValue:"smtp",options:[{label:"SMTP",value:"smtp"},{label:"Resend",value:"resend"},{label:"SendGrid",value:"sendgrid"},{label:"Mailgun",value:"mailgun"},{label:"Brevo",value:"brevo"},{label:t("mailAccount.vendor.http"),value:"http"}]},{key:"apiKey",label:t("mailAccount.field.apiKey"),table:false},{key:"endpoint",label:t("mailAccount.field.endpoint"),table:false,placeholder:t("mailAccount.placeholder.endpoint")},{key:"username",label:t("mailAccount.field.smtpUsername"),table:false},{key:"password",label:t("mailAccount.field.smtpPassword"),table:false},{key:"host",label:t("mailAccount.field.smtpHost"),table:false},{key:"port",label:t("mailAccount.field.smtpPort"),type:"number",defaultValue:465,table:false,placeholder:t("mailAccount.placeholder.port")},{key:"sslEnable",label:t("mailAccount.field.ssl"),type:"select",defaultValue:1,options:onOff,table:false},{key:"starttlsEnable",label:t("mailAccount.field.starttls"),type:"select",defaultValue:0,options:onOff,table:false},{key:"status",label:t("common.status"),type:"select",defaultValue:1,format:"status",options:status},{key:"remark",label:t("common.remark"),type:"textarea",table:false},{key:"createTime",label:t("common.createdAt"),format:"date"},{key:"mail",label:t("common.email"),filter:true,table:false},{key:"status",label:t("common.status"),filter:true,table:false,type:"select",options:status}]),mapSave:(record:ResourceRecord)=>({...record,sslEnable:Boolean(Number(record.sslEnable)),starttlsEnable:Boolean(Number(record.starttlsEnable))})},
+ mailTemplate:common("/system/mail-template","mail-template",t("mailTemplate.title"),t("mailTemplate.description"),templateFields()),
+ mailLog:common("/system/mail-log","mail-log",t("mailLog.title"),t("mailLog.description"),logFields(),true),
+ smsChannel:common("/system/sms-channel","sms-channel",t("smsChannel.title"),t("smsChannel.description"),channelFields("sms")),
+ smsTemplate:common("/system/sms-template","sms-template",t("smsTemplate.title"),t("smsTemplate.description"),templateFields()),
+ smsLog:common("/system/sms-log","sms-log",t("smsLog.title"),t("smsLog.description"),logFields(),true),
+ notifyTemplate:common("/system/notify-template","notify-template",t("notifyTemplate.title"),t("notifyTemplate.description"),[{key:"name",label:t("message.field.templateName"),required:true},{key:"code",label:t("message.field.templateCode"),required:true,format:"mono"},{key:"type",label:t("common.type"),type:"number",defaultValue:0},{key:"messageTemplateId",label:t("notifyTemplate.field.messageTemplateId"),type:"number",required:true},{key:"params",label:t("message.field.params"),type:"textarea",table:false},{key:"status",label:t("common.status"),type:"select",defaultValue:1,format:"status",options:status},{key:"remark",label:t("common.remark"),type:"textarea",table:false},{key:"createdAt",label:t("common.createdAt"),format:"date"},{key:"name",label:t("common.name"),filter:true,table:false},{key:"code",label:t("common.code"),filter:true,table:false}]),
+ notifyMessage:common("/system/notify-message","notify-message",t("notifyMessage.title"),t("notifyMessage.description"),notifyFields(),true),
+ notifyMy:common("/system/notify-message","notify-message",t("notifyMy.title"),t("notifyMy.description"),notifyFields(),true,"my-page"),
+ socialUser:common("/system/social-user","social-user",t("socialUser.title"),t("socialUser.description"),[{key:"id",label:t("message.field.recordId"),format:"mono"},{key:"socialType",label:t("socialUser.field.socialType")},{key:"openId",label:"Open ID",format:"mono"},{key:"nickname",label:t("socialUser.field.nickname")},{key:"createdAt",label:t("socialUser.field.boundAt"),format:"date"}],true,"list")
 };
-function templateFields(){return [{key:"name",label:"模板名称",required:true},{key:"code",label:"模板编码",required:true,format:"mono" as const},{key:"content",label:"内容",type:"textarea" as const,required:true},{key:"channelId",label:"渠道 ID",type:"number" as const,required:true},{key:"type",label:"类型",type:"number" as const,defaultValue:0},{key:"status",label:"状态",type:"select" as const,defaultValue:1,format:"status" as const,options:status},{key:"params",label:"参数定义",type:"textarea" as const,table:false},{key:"remark",label:"说明",type:"textarea" as const,table:false},{key:"createdAt",label:"创建时间",format:"date" as const},{key:"name",label:"名称",filter:true,table:false},{key:"code",label:"编码",filter:true,table:false}];}
-function channelFields(type:string){return [{key:"name",label:"渠道名称",required:true},{key:"code",label:"渠道编码",required:true,format:"mono" as const},{key:"type",label:"渠道类型",defaultValue:type},{key:"config",label:"渠道配置 JSON",type:"textarea" as const,table:false},{key:"status",label:"状态",type:"select" as const,defaultValue:1,format:"status" as const,options:status},{key:"remark",label:"说明",type:"textarea" as const,table:false},{key:"createdAt",label:"创建时间",format:"date" as const},{key:"name",label:"名称",filter:true,table:false},{key:"status",label:"状态",filter:true,table:false,type:"select" as const,options:status}];}
-function logFields(){return [{key:"id",label:"记录 ID",format:"mono" as const},{key:"receiver",label:"接收方"},{key:"templateCode",label:"模板编码",format:"mono" as const},{key:"sendStatus",label:"发送状态"},{key:"errorMessage",label:"失败原因"},{key:"sendTime",label:"发送时间",format:"date" as const},{key:"receiver",label:"接收方",filter:true,table:false},{key:"sendStatus",label:"发送状态",filter:true,table:false}];}
-function notifyFields(){return [{key:"id",label:"通知 ID",format:"mono" as const},{key:"userId",label:"用户 UID",format:"mono" as const},{key:"templateCode",label:"模板编码",format:"mono" as const},{key:"templateContent",label:"内容"},{key:"readStatus",label:"读取状态"},{key:"createdAt",label:"创建时间",format:"date" as const},{key:"userId",label:"用户 UID",filter:true,table:false},{key:"readStatus",label:"读取状态",filter:true,table:false}];}
-export function MessageResourcePage({config}:{config:ResourcePageConfig}){return <ResourcePage config={config}/>}
+}
+/** 组件内取通信中心各页面的配置（文案随当前语言）。 */
+function useMessageConfigs(){const t=useT("system");return React.useMemo(()=>buildConfigs(t),[t]);}
+export function MessageResourcePage({config}:{config:MessageConfigKey}){const configs=useMessageConfigs();return <ResourcePage config={configs[config]}/>}
+
+/** 前端自己的表单校验错误：文案已经翻译好，直接显示，不走 describeError。 */
+class FormValidationError extends Error {}
 
 type MessageActionKind = "mail" | "sms" | "notify" | "channel";
 type ActionTarget = { kind: MessageActionKind; record: ResourceRecord };
@@ -38,7 +49,10 @@ function parseParams(value: string): Record<string, string> {
   }));
 }
 
-export function ActionMessageResourcePage({ config, kind }: { config: ResourcePageConfig; kind: MessageActionKind }) {
+export function ActionMessageResourcePage({ config: configKey, kind }: { config: MessageConfigKey; kind: MessageActionKind }) {
+  const t = useT("system");
+  const describeError = useDescribeError();
+  const config = useMessageConfigs()[configKey];
   const queryClient = useQueryClient();
   const canUpdate = usePermission(config.permissions.update);
   const [target, setTarget] = React.useState<ActionTarget | null>(null);
@@ -51,10 +65,10 @@ export function ActionMessageResourcePage({ config, kind }: { config: ResourcePa
 
   const send = useMutation({
     mutationFn: async () => {
-      if (!target || !receiver.trim()) throw new Error(kind === "mail" ? "请填写收件邮箱" : "请填写接收方");
+      if (!target || !receiver.trim()) throw new FormValidationError(kind === "mail" ? t("message.send.error.mailRequired") : t("message.send.error.receiverRequired"));
       const code = String(target.record.code ?? "");
       if (kind === "channel") {
-        if (!content.trim()) throw new Error("请填写测试内容");
+        if (!content.trim()) throw new FormValidationError(t("message.send.error.contentRequired"));
         return apiWrite<boolean>(`/admin${config.endpoint}/send-test`, "POST", { channelId: target.record.id, receiver: receiver.trim(), content: content.trim() });
       }
       if (kind === "mail") {
@@ -66,7 +80,7 @@ export function ActionMessageResourcePage({ config, kind }: { config: ResourcePa
       setTarget(null); setReceiver(""); setCc(""); setBcc(""); setContent(""); setParams(""); setError(null);
       await queryClient.invalidateQueries({ queryKey: [config.resourceKey] });
     },
-    onError: (cause: Error) => setError(cause.message),
+    onError: (cause: Error) => setError(cause instanceof FormValidationError ? cause.message : describeError(cause)),
   });
 
   const enhanced: ResourcePageConfig = {
@@ -76,7 +90,7 @@ export function ActionMessageResourcePage({ config, kind }: { config: ResourcePa
       return {
         primary: existing.primary,
         more: [
-          ...(canUpdate ? [{ label: kind === "channel" ? "测试发送" : "发送", tone: "primary" as const, onClick: () => { setError(null); setTarget({ kind, record }); } }] : []),
+          ...(canUpdate ? [{ label: kind === "channel" ? t("message.action.testSend") : t("message.action.send"), tone: "primary" as const, onClick: () => { setError(null); setTarget({ kind, record }); } }] : []),
           ...(existing.more ?? []),
         ],
       };
@@ -85,18 +99,20 @@ export function ActionMessageResourcePage({ config, kind }: { config: ResourcePa
 
   return <>
     <ResourcePage config={enhanced} />
-    <Drawer open={Boolean(target)} onClose={() => setTarget(null)} title={kind === "channel" ? "测试发送" : `发送${config.title}`} description={kind === "channel" ? String(target?.record.name ?? "") : `模板：${String(target?.record.code ?? "-")}`} footer={<><Button variant="ghost" onClick={() => setTarget(null)}>取消</Button><Button onClick={() => send.mutate()} disabled={send.isPending}>{send.isPending ? "发送中…" : "确认发送"}</Button></>}>
+    <Drawer open={Boolean(target)} onClose={() => setTarget(null)} title={kind === "channel" ? t("message.action.testSend") : t("message.send.title", { title: config.title })} description={kind === "channel" ? String(target?.record.name ?? "") : t("message.send.templateLabel", { code: String(target?.record.code ?? "-") })} footer={<><Button variant="ghost" onClick={() => setTarget(null)}>{t("common.cancel")}</Button><Button onClick={() => send.mutate()} disabled={send.isPending}>{send.isPending ? t("message.send.pending") : t("message.send.confirm")}</Button></>}>
       <div className="space-y-4">
         {error && <Alert tone="error">{error}</Alert>}
-        <Field label={kind === "mail" ? "收件邮箱" : "接收方"}><Input value={receiver} onChange={(event) => setReceiver(event.target.value)} placeholder={kind === "mail" ? "多个邮箱用逗号或换行分隔" : "手机号、用户 UID 或目标地址"} /></Field>
-        {kind === "mail" && <><Field label="抄送（可选）"><Input value={cc} onChange={(event) => setCc(event.target.value)} placeholder="多个邮箱用逗号分隔" /></Field><Field label="密送（可选）"><Input value={bcc} onChange={(event) => setBcc(event.target.value)} placeholder="多个邮箱用逗号分隔" /></Field></>}
-        {kind === "channel" ? <Field label="测试内容"><Textarea value={content} onChange={(event) => setContent(event.target.value)} placeholder="输入用于验证渠道连通性的内容" /></Field> : <Field label="模板参数（可选）"><Textarea value={params} onChange={(event) => setParams(event.target.value)} placeholder={"每行一个参数，例如：\nname=张三\ncode=123456"} /></Field>}
+        <Field label={kind === "mail" ? t("message.send.field.toMails") : t("message.field.receiver")}><Input value={receiver} onChange={(event) => setReceiver(event.target.value)} placeholder={kind === "mail" ? t("message.send.placeholder.toMails") : t("message.send.placeholder.receiver")} /></Field>
+        {kind === "mail" && <><Field label={t("message.send.field.cc")}><Input value={cc} onChange={(event) => setCc(event.target.value)} placeholder={t("message.send.placeholder.ccMails")} /></Field><Field label={t("message.send.field.bcc")}><Input value={bcc} onChange={(event) => setBcc(event.target.value)} placeholder={t("message.send.placeholder.ccMails")} /></Field></>}
+        {kind === "channel" ? <Field label={t("message.send.field.testContent")}><Textarea value={content} onChange={(event) => setContent(event.target.value)} placeholder={t("message.send.placeholder.testContent")} /></Field> : <Field label={t("message.send.field.params")}><Textarea value={params} onChange={(event) => setParams(event.target.value)} placeholder={t("message.send.placeholder.params")} /></Field>}
       </div>
     </Drawer>
   </>;
 }
 
 export function MyNotifyResourcePage() {
+  const t = useT("system");
+  const configs = useMessageConfigs();
   const queryClient = useQueryClient();
   const canUpdate = usePermission(configs.notifyMy.permissions.update);
   const markRead = useMutation({
@@ -105,8 +121,8 @@ export function MyNotifyResourcePage() {
   });
   const enhanced: ResourcePageConfig = {
     ...configs.notifyMy,
-    headerActions: canUpdate ? <Button variant="outline" onClick={() => markRead.mutate(undefined)} disabled={markRead.isPending}>全部标记已读</Button> : undefined,
-    rowActions: (record) => Number(record.readStatus) === 1 || !canUpdate ? ({}) : ({ primary: [{ label: "标记已读", tone: "primary", onClick: () => markRead.mutate([record.id]) }] }),
+    headerActions: canUpdate ? <Button variant="outline" onClick={() => markRead.mutate(undefined)} disabled={markRead.isPending}>{t("notifyMy.action.markAllRead")}</Button> : undefined,
+    rowActions: (record) => Number(record.readStatus) === 1 || !canUpdate ? ({}) : ({ primary: [{ label: t("notifyMy.action.markRead"), tone: "primary", onClick: () => markRead.mutate([record.id]) }] }),
   };
   return <ResourcePage config={enhanced} />;
 }

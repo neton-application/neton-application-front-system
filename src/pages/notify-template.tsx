@@ -1,1 +1,1 @@
-"use client";import*as React from"react";import{ActionMessageResourcePage,configs}from"./message-resources";export default function Page(){return <ActionMessageResourcePage config={configs.notifyTemplate} kind="notify"/>}
+"use client";import*as React from"react";import{ActionMessageResourcePage}from"./message-resources";export default function Page(){return <ActionMessageResourcePage config="notifyTemplate" kind="notify"/>}

@@ -9,7 +9,8 @@
   },
   "exports": {
     "./manifest": "./src/manifest.ts",
-    "./pages/*": "./src/pages/*.tsx"
+    "./pages/*": "./src/pages/*.tsx",
+    "./locales/*": "./src/locales/*.ts"
   },
   "peerDependencies": {
     "@neton/application-front-contract": "^1.0.0",

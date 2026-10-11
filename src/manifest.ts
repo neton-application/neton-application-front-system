@@ -4,6 +4,10 @@ import { defineFrontModule } from "@neton/application-front-contract";
 export default defineFrontModule({
   id: "system",
   contractVersion: "1.0.0",
+  locales: [
+    { lang: "zh-CN", entry: "zh-CN" },
+    { lang: "en-US", entry: "en-US" },
+  ],
   pages: [
     { key: "system/user/index", path: "/system/user", entry: "user-list", rendering: "client" },
     { key: "system/setting/index", path: "/system/setting", entry: "setting-list", rendering: "client" },

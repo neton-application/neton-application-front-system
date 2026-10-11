@@ -3,6 +3,8 @@
 import * as React from "react";
 import { apiFetch, apiWrite } from "@neton/application-front-runtime/client";
 import { Alert, Button, Field, Input, PageHeader, Select } from "@neton/application-front-kit";
+import { useT } from "@neton/application-front-runtime/i18n";
+import { useDescribeError } from "@neton/application-front-runtime/errors";
 
 interface Profile {
   id: number;
@@ -18,6 +20,8 @@ interface Profile {
  * 后端的 /profile/update 也只收这几个字段。
  */
 export default function ProfilePage() {
+  const t = useT("system");
+  const describeError = useDescribeError();
   const [profile, setProfile] = React.useState<Profile | null>(null);
   const [draft, setDraft] = React.useState({ nickname: "", email: "", mobile: "", gender: "0" });
   const [error, setError] = React.useState<string | null>(null);
@@ -30,8 +34,8 @@ export default function ProfilePage() {
         setProfile(p);
         setDraft({ nickname: p.nickname ?? "", email: p.email ?? "", mobile: p.mobile ?? "", gender: String(p.gender ?? 0) });
       })
-      .catch((e: Error) => setError(e.message));
-  }, []);
+      .catch((e: Error) => setError(describeError(e)));
+  }, [describeError]);
 
   async function save(event: React.FormEvent) {
     event.preventDefault();
@@ -48,7 +52,7 @@ export default function ProfilePage() {
       });
       setSaved(true);
     } catch (e) {
-      setError((e as Error).message);
+      setError(describeError(e));
     } finally {
       setPending(false);
     }
@@ -56,31 +60,31 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader eyebrow="个人中心" title="个人资料" description="修改你自己的昵称与联系方式；部门、角色由管理员维护" />
+      <PageHeader eyebrow={t("account.eyebrow")} title={t("profile.title")} description={t("profile.description")} />
       {error && <Alert tone="error">{error}</Alert>}
-      {saved && <Alert tone="info">已保存</Alert>}
+      {saved && <Alert tone="info">{t("profile.saved")}</Alert>}
       <form onSubmit={save} className="front-surface grid max-w-xl gap-4 rounded-xl p-5">
-        <Field label="用户名">
+        <Field label={t("common.username")}>
           <Input value={profile?.username ?? ""} disabled />
         </Field>
-        <Field label="昵称（2–32 个字符）">
+        <Field label={t("profile.field.nickname")}>
           <Input value={draft.nickname} onChange={(e) => setDraft({ ...draft, nickname: e.target.value })} />
         </Field>
-        <Field label="邮箱">
+        <Field label={t("common.email")}>
           <Input type="email" value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} />
         </Field>
-        <Field label="手机号">
+        <Field label={t("common.mobile")}>
           <Input value={draft.mobile} onChange={(e) => setDraft({ ...draft, mobile: e.target.value })} />
         </Field>
-        <Field label="性别">
+        <Field label={t("common.gender")}>
           <Select value={draft.gender} onChange={(e) => setDraft({ ...draft, gender: e.target.value })}>
-            <option value="0">未设置</option>
-            <option value="1">男</option>
-            <option value="2">女</option>
+            <option value="0">{t("common.gender.unset")}</option>
+            <option value="1">{t("common.gender.male")}</option>
+            <option value="2">{t("common.gender.female")}</option>
           </Select>
         </Field>
         <div>
-          <Button type="submit" disabled={pending || !profile}>{pending ? "保存中…" : "保存"}</Button>
+          <Button type="submit" disabled={pending || !profile}>{pending ? t("common.saving") : t("common.save")}</Button>
         </div>
       </form>
     </div>

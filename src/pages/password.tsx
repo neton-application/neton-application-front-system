@@ -9,7 +9,7 @@ import { useDescribeError } from "@neton/application-front-runtime/errors";
 /** 修改自己的密码。必须输入当前密码 —— 后端同样校验，只凭登录态改不了。 */
 export default function PasswordPage() {
   const t = useT("system");
-  const describeError = useDescribeError();
+  const describeError = useDescribeError("system");
   const [pw, setPw] = React.useState({ old: "", next: "", confirm: "" });
   const [error, setError] = React.useState<string | null>(null);
   const [done, setDone] = React.useState(false);

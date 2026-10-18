@@ -47,7 +47,7 @@ const emptyType: DictTypeForm = { name: "", type: "", status: 1, remark: "" };
 
 export default function SystemDictPage() {
   const t = useT("system");
-  const describeError = useDescribeError();
+  const describeError = useDescribeError("system");
   const queryClient = useQueryClient();
   const canCreate = usePermission("system:dict:create");
   const canUpdate = usePermission("system:dict:update");

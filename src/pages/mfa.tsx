@@ -11,7 +11,7 @@ type Challenge = { status: "mfa_required" | "mfa_enrollment_required"; challenge
 
 export default function MfaPage() {
   const t = useT("system");
-  const describeError = useDescribeError();
+  const describeError = useDescribeError("system");
   const [challenge, setChallenge] = React.useState<Challenge | null>(null);
   const [enrollment, setEnrollment] = React.useState<{ secret: string; otpauthUri: string } | null>(null);
   const [code, setCode] = React.useState("");

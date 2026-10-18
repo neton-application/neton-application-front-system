@@ -4,7 +4,7 @@ import { useT } from "@neton/application-front-runtime/i18n";
 export default function Page() {
   const t = useT("system");
   return <ResourcePage config={{
-  resourceKey: "system-post", eyebrow: t("common.eyebrow.organization"), title: t("post.title"), description: t("post.description"), endpoint: "/system/post",
+  resourceKey: "system-post", errorNamespace: "system", eyebrow: t("common.eyebrow.organization"), title: t("post.title"), description: t("post.description"), endpoint: "/system/post",
   permissions: { page: "system:post:query", create: "system:post:create", update: "system:post:update", delete: "system:post:delete" },
   fields: [
     { key: "name", label: t("post.field.name"), required: true }, { key: "code", label: t("post.field.code"), required: true, format: "mono" },

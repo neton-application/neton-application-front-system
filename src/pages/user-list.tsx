@@ -28,7 +28,7 @@ const emptyForm: UserForm = { username: "", password: "", nickname: "", deptId: 
 
 export default function SystemUserListPage() {
   const t = useT("system");
-  const describeError = useDescribeError();
+  const describeError = useDescribeError("system");
   const queryClient = useQueryClient();
   const canCreate = usePermission("system:user:create");
   const canUpdate = usePermission("system:user:update");

@@ -9,7 +9,7 @@ interface Dept { id: number; name: string; parentId: number; sort: number; statu
 interface DeptForm { id?: number; name: string; parentId: number; sort: number; status: number }
 function flatten(rows: Dept[], depth = 0): Array<Dept & { depth: number }> { return rows.flatMap((row) => [{ ...row, depth }, ...flatten(row.children ?? [], depth + 1)]); }
 export default function DeptListPage() {
-  const t = useT("system"); const describeError = useDescribeError();
+  const t = useT("system"); const describeError = useDescribeError("system");
   const client = useQueryClient(); const canCreate = usePermission("system:dept:create"); const canUpdate = usePermission("system:dept:update"); const canDelete = usePermission("system:dept:delete");
   const [form, setForm] = React.useState<DeptForm | null>(null); const [deleting, setDeleting] = React.useState<Dept | null>(null); const [error, setError] = React.useState<string | null>(null);
   const query = useQuery({ queryKey: ["system-depts"], queryFn: () => apiFetch<Dept[]>("/admin/system/dept/list") }); const rows = flatten(query.data ?? []);

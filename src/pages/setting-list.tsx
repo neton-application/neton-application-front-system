@@ -38,7 +38,7 @@ function valueTypeLabel(t: Translate, valueType: number): string | undefined {
  */
 export default function SystemSettingListPage() {
   const t = useT("system");
-  const describeError = useDescribeError();
+  const describeError = useDescribeError("system");
   const [rows, setRows] = React.useState<SettingItem[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);

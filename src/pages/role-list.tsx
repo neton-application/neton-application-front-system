@@ -128,7 +128,7 @@ function MenuPermissionNode({
 
 export default function SystemRoleListPage() {
   const t = useT("system");
-  const describeError = useDescribeError();
+  const describeError = useDescribeError("system");
   const queryClient = useQueryClient();
   const canCreate = usePermission("system:role:create");
   const canUpdate = usePermission("system:role:update");

@@ -56,7 +56,7 @@ function orderMenus(items: MenuItem[]): VisibleMenu[] {
 
 export default function SystemMenuListPage() {
   const t = useT("system");
-  const describeError = useDescribeError();
+  const describeError = useDescribeError("system");
   const queryClient = useQueryClient();
   const canCreate = usePermission("system:menu:create");
   const canUpdate = usePermission("system:menu:update");

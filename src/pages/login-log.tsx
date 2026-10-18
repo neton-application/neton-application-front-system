@@ -4,7 +4,7 @@ import { useT } from "@neton/application-front-runtime/i18n";
 export default function Page() {
   const t = useT("system");
   return <ResourcePage config={{
-  resourceKey: "system-login-log", eyebrow: t("common.eyebrow.audit"), title: t("loginLog.title"), description: t("loginLog.description"), endpoint: "/system/login-log", readOnly: true,
+  resourceKey: "system-login-log", errorNamespace: "system", eyebrow: t("common.eyebrow.audit"), title: t("loginLog.title"), description: t("loginLog.description"), endpoint: "/system/login-log", readOnly: true,
   detailFields: [{ key: "id", label: t("common.id"), format: "mono" }, { key: "userId", label: t("common.userId"), format: "mono" }, { key: "username", label: t("common.username") }, { key: "userIp", label: t("common.ipAddress"), format: "mono" }, { key: "userAgent", label: t("loginLog.field.userAgent") }, { key: "loginResult", label: t("loginLog.field.loginResult") }, { key: "createdAt", label: t("loginLog.field.loginTime"), format: "date" }],
   permissions: { page: "system:login-log:query" },
   fields: [

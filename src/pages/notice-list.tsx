@@ -5,7 +5,7 @@ export default function Page() {
   const t = useT("system");
   const status = [{ label: t("common.enabled"), value: 1 }, { label: t("common.disabled"), value: 0 }];
   return <ResourcePage config={{
-  resourceKey: "system-notice", eyebrow: t("notice.eyebrow"), title: t("notice.title"), description: t("notice.description"), endpoint: "/system/notice",
+  resourceKey: "system-notice", errorNamespace: "system", eyebrow: t("notice.eyebrow"), title: t("notice.title"), description: t("notice.description"), endpoint: "/system/notice",
   permissions: { page: "system:notice:query", create: "system:notice:create", update: "system:notice:update", delete: "system:notice:delete" },
   fields: [
     { key: "title", label: t("common.title"), required: true }, { key: "type", label: t("common.type"), type: "select", defaultValue: 0, options: [{ label: t("notice.type.notification"), value: 0 }, { label: t("notice.type.announcement"), value: 1 }] },

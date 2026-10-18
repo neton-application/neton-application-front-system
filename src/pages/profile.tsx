@@ -21,7 +21,7 @@ interface Profile {
  */
 export default function ProfilePage() {
   const t = useT("system");
-  const describeError = useDescribeError();
+  const describeError = useDescribeError("system");
   const [profile, setProfile] = React.useState<Profile | null>(null);
   const [draft, setDraft] = React.useState({ nickname: "", email: "", mobile: "", gender: "0" });
   const [error, setError] = React.useState<string | null>(null);

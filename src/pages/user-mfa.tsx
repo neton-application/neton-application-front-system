@@ -9,7 +9,7 @@ import { useDescribeError } from "@neton/application-front-runtime/errors";
 
 export default function UserMfa({ id, name, onClose }: { id: number; name: string; onClose: () => void }) {
   const t = useT("system");
-  const describeError = useDescribeError();
+  const describeError = useDescribeError("system");
   const canUpdate = usePermission("system:user:update");
   const canReset = usePermission("system:user:update-password");
   const [value, setValue] = React.useState<{ required: boolean; bound: boolean } | null>(null);

@@ -422,6 +422,7 @@ const messages: Record<string, string> = {
   "error.DICT_TYPE_IMMUTABLE": "字典类型标识创建后不能修改",
   "error.DICT_TYPE_NOT_FOUND": "字典类型不存在",
   "error.EMAIL_VENDOR_UNSUPPORTED": "不支持的邮件服务商，请选择 smtp / resend / sendgrid / mailgun / brevo / http",
+  "error.MESSAGE_ENDPOINT_FORBIDDEN": "渠道配置的地址（短信接口、邮件 endpoint 或 SMTP 主机）被部署的出站策略拒绝：它是（或解析到）回环、内网或链路本地地址，或端口不在放行列表。内网中继需在 application.conf [egress] 中放行",
   "error.INVALID_CREDENTIALS": "用户名或密码错误",
   "error.IP_NOT_ALLOWED": "当前网络不允许访问",
   "error.LOGIN_LOCKED": "登录失败次数过多，请稍后再试",

@@ -422,6 +422,7 @@ const messages: Record<string, string> = {
   "error.DICT_TYPE_IMMUTABLE": "A dictionary type's identifier can't be changed",
   "error.DICT_TYPE_NOT_FOUND": "Dictionary type not found",
   "error.EMAIL_VENDOR_UNSUPPORTED": "Unsupported email vendor. Choose smtp, resend, sendgrid, mailgun, brevo or http",
+  "error.MESSAGE_ENDPOINT_FORBIDDEN": "The channel's address (SMS API URL, email endpoint or SMTP host) is not allowed by the deployment's egress policy: it is, or resolves to, a loopback, private or link-local address, or its port is not allowed. Allow internal relays in application.conf [egress]",
   "error.INVALID_CREDENTIALS": "Incorrect username or password",
   "error.IP_NOT_ALLOWED": "Access from this network is not allowed",
   "error.LOGIN_LOCKED": "Too many failed sign-in attempts. Please try again later",

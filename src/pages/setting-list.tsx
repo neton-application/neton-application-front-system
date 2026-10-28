@@ -2,12 +2,15 @@
 
 import * as React from "react";
 import { apiFetch, apiWrite } from "@neton/application-front-runtime/client";
+import { usePermission } from "@neton/application-front-runtime/client-context";
 import {
-  Alert, Button, DataTable, Drawer, Field, FilterPanel, Input,
+  Alert, Button, DataTable, Drawer, Field, FilterPanel,
   PageHeader, Select, StatusBadge, type DataColumn,
 } from "@neton/application-front-kit";
 import { useT, type Translate } from "@neton/application-front-runtime/i18n";
 import { useDescribeError } from "@neton/application-front-runtime/errors";
+import { settingDraft, settingUpdate } from "./setting-value";
+import { SettingValueInput } from "./setting-value-input";
 
 interface SettingItem {
   category: string;
@@ -39,6 +42,7 @@ function valueTypeLabel(t: Translate, valueType: number): string | undefined {
 export default function SystemSettingListPage() {
   const t = useT("system");
   const describeError = useDescribeError("system");
+  const canUpdate = usePermission("system:setting:update");
   const [rows, setRows] = React.useState<SettingItem[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -47,6 +51,14 @@ export default function SystemSettingListPage() {
   const [editing, setEditing] = React.useState<SettingItem | null>(null);
   const [draft, setDraft] = React.useState("");
   const [pending, setPending] = React.useState(false);
+  const [formError, setFormError] = React.useState<string | null>(null);
+  const writing = React.useRef(false);
+
+  function closeEditor() {
+    if (writing.current) return;
+    setEditing(null);
+    setFormError(null);
+  }
 
   const load = React.useCallback(() => {
     setLoading(true);
@@ -59,30 +71,35 @@ export default function SystemSettingListPage() {
   React.useEffect(load, [load]);
 
   async function save() {
-    if (!editing) return;
+    if (!editing || !canUpdate || writing.current) return;
+    writing.current = true;
     setPending(true);
+    setFormError(null);
     try {
       // 后端按定义校验，越界/类型不符会被拒——错误停在这里，
       // 好过写进库之后读取时静默退回默认值
-      await apiWrite("/admin/system/setting/update", "POST", { key: editing.key, value: draft.trim() });
+      await apiWrite("/admin/system/setting/update", "POST", settingUpdate(editing, draft));
       setEditing(null);
       load();
     } catch (e) {
-      setError(describeError(e));
+      setFormError(describeError(e));
     } finally {
+      writing.current = false;
       setPending(false);
     }
   }
 
   async function sync() {
+    if (!canUpdate || writing.current) return;
+    writing.current = true;
     setPending(true);
     try {
-      const created = await apiWrite<number>("/admin/system/setting/sync", "POST");
-      setError(created > 0 ? null : null);
+      await apiWrite<number>("/admin/system/setting/sync", "POST");
       load();
     } catch (e) {
       setError(describeError(e));
     } finally {
+      writing.current = false;
       setPending(false);
     }
   }
@@ -113,7 +130,7 @@ export default function SystemSettingListPage() {
         <span className="text-xs text-[var(--muted-foreground)]">{r.description}</span>
       ) },
     { key: "ops", header: "", className: "text-right", cell: (r) => (
-        <Button variant="outline" onClick={() => { setEditing(r); setDraft(r.value); }}>{t("setting.action.edit")}</Button>
+        canUpdate && <Button variant="outline" disabled={pending || loading} onClick={() => { setEditing(r); setDraft(settingDraft(r, r.value)); setFormError(null); }}>{t("setting.action.edit")}</Button>
       ) },
   ];
 
@@ -123,7 +140,7 @@ export default function SystemSettingListPage() {
         eyebrow={t("setting.eyebrow")}
         title={t("setting.title")}
         description={t("setting.description")}
-        actions={<Button variant="outline" onClick={sync} disabled={pending}>{t("setting.action.sync")}</Button>}
+        actions={canUpdate && <Button variant="outline" onClick={sync} disabled={pending}>{t("setting.action.sync")}</Button>}
       />
       {error && <Alert tone="error">{error}</Alert>}
 
@@ -143,29 +160,30 @@ export default function SystemSettingListPage() {
 
       <Drawer
         open={editing !== null}
-        onClose={() => setEditing(null)}
+        onClose={closeEditor}
         title={editing?.name ?? ""}
         description={editing?.description}
         footer={
           <>
-            <Button variant="outline" onClick={() => setEditing(null)}>{t("common.cancel")}</Button>
-            <Button onClick={save} disabled={pending}>
+            <Button variant="outline" onClick={closeEditor} disabled={pending}>{t("common.cancel")}</Button>
+            <Button onClick={save} disabled={pending || !canUpdate || (editing?.valueType === 3 && draft !== "true" && draft !== "false")}>
               {pending ? t("common.saving") : t("common.save")}
             </Button>
           </>
         }
       >
+        {formError && <Alert tone="error">{formError}</Alert>}
         <Field label={t("setting.field.key")}>
           <code className="text-xs">{editing?.key}</code>
         </Field>
         <Field label={t("setting.field.valueWithType", { type: editing ? valueTypeLabel(t, editing.valueType) ?? "" : "" })}>
-          <Input value={draft} onChange={(e) => setDraft(e.target.value)} />
+          <SettingValueInput valueType={editing?.valueType ?? 0} value={draft} onChange={setDraft} disabled={pending} t={t} />
         </Field>
         <Field label={t("setting.field.defaultValue")}>
           <div className="flex items-center gap-2">
             <code className="text-xs">{editing?.defaultValue}</code>
             {editing && draft !== editing.defaultValue && (
-              <Button variant="outline" onClick={() => setDraft(editing.defaultValue)}>{t("setting.action.restoreDefault")}</Button>
+              <Button variant="outline" aria-label={t("setting.action.restoreDefault")} disabled={pending} onClick={() => setDraft(settingDraft(editing, editing.defaultValue))}>{t("setting.action.restoreDefault")}</Button>
             )}
           </div>
         </Field>

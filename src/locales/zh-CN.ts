@@ -153,6 +153,9 @@ const messages: Record<string, string> = {
   "setting.valueType.int": "整数",
   "setting.valueType.long": "长整数",
   "setting.valueType.boolean": "布尔",
+  "setting.boolean.true": "是（true）",
+  "setting.boolean.false": "否（false）",
+  "setting.boolean.select": "请选择值",
   "setting.valueType.decimal": "定点数",
   "setting.valueType.json": "JSON",
   // 角色管理 role-list

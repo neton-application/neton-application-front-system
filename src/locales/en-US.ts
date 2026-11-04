@@ -335,6 +335,8 @@ const messages: Record<string, string> = {
   "message.field.templateName": "Template name",
   "message.field.templateCode": "Template code",
   "message.field.channelId": "Channel ID",
+  "message.field.language": "Template language",
+  "message.language.default": "Site default (publishing language)",
   "message.field.params": "Parameters",
   "message.field.channelName": "Channel name",
   "message.field.channelCode": "Channel code",

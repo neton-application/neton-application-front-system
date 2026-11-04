@@ -335,6 +335,8 @@ const messages: Record<string, string> = {
   "message.field.templateName": "模板名称",
   "message.field.templateCode": "模板编码",
   "message.field.channelId": "渠道 ID",
+  "message.field.language": "模板语言",
+  "message.language.default": "站点默认（发布语言）",
   "message.field.params": "参数定义",
   "message.field.channelName": "渠道名称",
   "message.field.channelCode": "渠道编码",
